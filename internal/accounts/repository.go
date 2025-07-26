@@ -8,9 +8,9 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context, name string, initialBalance int64) (*Account, error)
+	Create(ctx context.Context, acc *Account) error
 	GetById(ctx context.Context, id string) (*Account, error)
-	Update(ctx context.Context, id string, amount int) error
+	Update(ctx context.Context, id string, amount int64) error
 }
 type repository struct {
 	db *sql.DB
@@ -20,21 +20,17 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) Create(ctx context.Context, name string, initialBalance int64) (*Account, error) {
-	id := uuid.New().String()
+func (r *repository) Create(ctx context.Context, acc *Account) error {
+	acc.ID = uuid.New().String()
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO accounts (id, name, balance)
 		VALUES ($1, $2, $3)
-	`, id, name, initialBalance)
+	`, acc.ID, acc.Name, acc.Balance)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &Account{
-		ID:      id,
-		Name:    name,
-		Balance: initialBalance,
-	}, nil
+	return nil
 }
 
 func (r *repository) GetById(ctx context.Context, id string) (*Account, error) {
@@ -53,7 +49,7 @@ func (r *repository) GetById(ctx context.Context, id string) (*Account, error) {
 	return &acc, nil
 }
 
-func (r *repository) Update(ctx context.Context, id string, amount int) error {
+func (r *repository) Update(ctx context.Context, id string, amount int64) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE accounts
 		SET balance = balance + $1
