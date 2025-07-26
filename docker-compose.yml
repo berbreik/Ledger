@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ledger-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - mongodb
+      - rabbitmq
+    environment:
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/ledger?sslmode=disable
+      - MONGO_URI=mongodb://mongodb:27017
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+
+  transaction-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.processor
+    container_name: ledger-processor
+    depends_on:
+      - postgres
+      - mongodb
+      - rabbitmq
+    environment:
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/ledger?sslmode=disable
+      - MONGO_URI=mongodb://mongodb:27017
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI on localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  pgdata:
+  mongodata:
