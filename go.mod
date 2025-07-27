@@ -4,6 +4,7 @@ go 1.24.2
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/streadway/amqp v1.1.0
 	go.mongodb.org/mongo-driver v1.17.4
 )
 
